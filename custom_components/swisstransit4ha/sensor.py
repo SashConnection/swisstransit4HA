@@ -141,6 +141,7 @@ class BoardSensor(TransitEntity, SensorEntity):
             "stop_id": data.stop_id,
             "stop_name": data.stop_name,
             "source": data.source,
+            "walk_time": self.coordinator.walk_time,
             "departures": [d.as_dict() for d in data.departures],
             "alerts": [s.as_dict() for s in data.situations],
             "swisstransit_board": True,

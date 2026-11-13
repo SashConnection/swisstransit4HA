@@ -6,7 +6,7 @@ from datetime import timedelta
 from typing import Final
 
 DOMAIN: Final = "swisstransit4ha"
-VERSION: Final = "2026.11.0"
+VERSION: Final = "2026.11.1"
 MANUFACTURER: Final = "Swiss public transport"
 ATTRIBUTION: Final = "Data: opentransportdata.swiss / transport.opendata.ch"
 

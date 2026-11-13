@@ -51,12 +51,24 @@ Then: *Settings → Devices & services → Add integration → Swiss Transit For
 
 ## Card
 
-The card is loaded automatically. In a dashboard: *Add card → Swiss Transit departures*, or in YAML:
+The card is loaded automatically. In a dashboard: *Add card → Swiss Transit departures*, then pick a style in the editor:
+
+| Style | Looks like |
+|---|---|
+| `list` | Clean list: line, destination, platform, time, delay, minutes left |
+| `flap` | Split-flap station board: the letters spin when a departure or a delay changes |
+| `platform` | Dark blue platform display with a live clock, blinking delays and a scrolling disruption banner |
+| `countdown` | One big countdown to the next departure, the following ones as chips, and *leave in X min* from your walking time. Made for wall tablets |
+| `timeline` | The next 30 minutes on a time axis, one row per line |
+
+In YAML:
 
 ```yaml
 type: custom:swisstransit-departures-card
 entity: sensor.lausanne_flon_departure_board
+style: flap          # list, flap, platform, countdown, timeline
 max: 8               # optional
+window: 30           # optional, timeline length in minutes
 show_platform: true  # optional
 show_alerts: true    # optional
 title: To work       # optional
@@ -97,7 +109,7 @@ actions:
 
 **Filtres :** lignes (`9, 21, S3`), direction (`Genève`), moyens de transport, temps de marche jusqu'à l'arrêt (cache les départs que tu ne peux plus attraper).
 
-**Carte :** *Ajouter une carte → Swiss Transit departures*.
+**Carte :** *Ajouter une carte → Swiss Transit departures*, puis choisis un style dans l'éditeur : liste, tableau à palettes (les lettres tournent comme dans les gares), affichage de quai, prochain départ en grand (avec « pars dans X min ») ou frise des 30 prochaines minutes.
 
 ---
 

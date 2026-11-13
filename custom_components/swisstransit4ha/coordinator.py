@@ -131,7 +131,7 @@ class TransitCoordinator(DataUpdateCoordinator[TransitData]):
         self._modes: list[str] | None = options.get(CONF_MODES) or None
         self._lines = split_lines(options.get(CONF_LINES))
         self._destination: str | None = options.get(CONF_DESTINATION) or None
-        self._walk_time = int(options.get(CONF_WALK_TIME, DEFAULT_WALK_TIME))
+        self.walk_time = int(options.get(CONF_WALK_TIME, DEFAULT_WALK_TIME))
         self._delay_threshold = int(options.get(CONF_DELAY_THRESHOLD, DEFAULT_DELAY_THRESHOLD))
 
     @property
@@ -154,7 +154,7 @@ class TransitCoordinator(DataUpdateCoordinator[TransitData]):
             modes=self._modes,
             lines=self._lines,
             destination=self._destination,
-            walk_time=self._walk_time,
+            walk_time=self.walk_time,
             limit=self._limit,
         )
         now = dt_util.utcnow()
