@@ -1,0 +1,105 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Scegli una fermata o una stazione",
+        "description": "Scrivi il nome di una fermata del bus o del tram, di una stazione, di un imbarcadero o di una funivia in Svizzera.\n\nFacoltativo: una chiave gratuita di opentransportdata.swiss (API «OJP 2.0») aggiunge i dati in tempo reale di bus e tram, le soppressioni e i messaggi di perturbazione. Senza chiave, l'orario viene da transport.opendata.ch, con i ritardi in tempo reale soprattutto per i treni.",
+        "data": {
+          "query": "Fermata o stazione",
+          "api_key": "Chiave API opentransportdata.swiss (facoltativa)"
+        }
+      },
+      "stop": {
+        "title": "Quale?",
+        "data": {
+          "stop_id": "Fermata"
+        }
+      },
+      "filters": {
+        "title": "Partenze da {stop}",
+        "description": "Tutto è facoltativo. Lascia vuoto per vedere tutte le partenze.",
+        "data": {
+          "limit": "Numero di partenze",
+          "modes": "Mezzi di trasporto",
+          "lines": "Linee",
+          "destination": "Direzione contiene",
+          "walk_time": "Tempo a piedi fino alla fermata",
+          "delay_threshold": "Ritardo considerato perturbazione",
+          "scan_interval": "Aggiorna ogni"
+        },
+        "data_description": {
+          "lines": "Separate da virgole, p. es. 9, 21, S3. Vuoto per tutte le linee.",
+          "destination": "Solo le partenze la cui destinazione contiene questo testo, p. es. Lugano.",
+          "walk_time": "Nasconde le partenze che non puoi più raggiungere."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Chiave API rifiutata",
+        "description": "opentransportdata.swiss ha rifiutato la chiave API. Inseriscine una nuova, o lascia vuoto per usare la fonte gratuita senza chiave.",
+        "data": {
+          "api_key": "Chiave API opentransportdata.swiss"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Il servizio dei dati di trasporto non è raggiungibile.",
+      "invalid_api_key": "opentransportdata.swiss ha rifiutato questa chiave API.",
+      "no_stop": "Nessuna fermata trovata con questo nome."
+    },
+    "abort": {
+      "reauth_successful": "La chiave API è stata aggiornata."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opzioni del tabellone partenze",
+        "data": {
+          "api_key": "Chiave API opentransportdata.swiss (facoltativa)",
+          "limit": "Numero di partenze",
+          "modes": "Mezzi di trasporto",
+          "lines": "Linee",
+          "destination": "Direzione contiene",
+          "walk_time": "Tempo a piedi fino alla fermata",
+          "delay_threshold": "Ritardo considerato perturbazione",
+          "scan_interval": "Aggiorna ogni"
+        },
+        "data_description": {
+          "lines": "Separate da virgole, p. es. 9, 21, S3. Vuoto per tutte le linee.",
+          "destination": "Solo le partenze la cui destinazione contiene questo testo, p. es. Lugano.",
+          "walk_time": "Nasconde le partenze che non puoi più raggiungere."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Il servizio dei dati di trasporto non è raggiungibile.",
+      "invalid_api_key": "opentransportdata.swiss ha rifiutato questa chiave API."
+    }
+  },
+  "selector": {
+    "mode": {
+      "options": {
+        "train": "Treno",
+        "bus": "Bus",
+        "tram": "Tram",
+        "metro": "Metropolitana",
+        "ship": "Battello",
+        "cableway": "Funivia / funicolare",
+        "other": "Altro"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "departure_1": { "name": "Prossima partenza" },
+      "departure_2": { "name": "Seconda partenza" },
+      "departure_3": { "name": "Terza partenza" },
+      "delay": { "name": "Ritardo" },
+      "departures": { "name": "Tabellone partenze" },
+      "alerts": { "name": "Avvisi" }
+    },
+    "binary_sensor": {
+      "disruption": { "name": "Perturbazione" }
+    }
+  }
+}

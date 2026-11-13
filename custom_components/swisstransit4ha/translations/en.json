@@ -1,0 +1,105 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Choose a stop or station",
+        "description": "Type the name of a bus stop, tram stop, station, pier or cable car station anywhere in Switzerland.\n\nOptional: a free key from opentransportdata.swiss (API \"OJP 2.0\") adds real-time data for buses and trams, cancellations and disruption messages. Without a key, the timetable comes from transport.opendata.ch with real-time delays mostly for trains.",
+        "data": {
+          "query": "Stop or station",
+          "api_key": "opentransportdata.swiss API key (optional)"
+        }
+      },
+      "stop": {
+        "title": "Which one?",
+        "data": {
+          "stop_id": "Stop"
+        }
+      },
+      "filters": {
+        "title": "Departures from {stop}",
+        "description": "Everything is optional. Leave empty to see every departure.",
+        "data": {
+          "limit": "Number of departures",
+          "modes": "Means of transport",
+          "lines": "Lines",
+          "destination": "Direction contains",
+          "walk_time": "Walking time to the stop",
+          "delay_threshold": "Delay counted as a disruption",
+          "scan_interval": "Update every"
+        },
+        "data_description": {
+          "lines": "Comma separated, e.g. 9, 21, S3. Empty for all lines.",
+          "destination": "Only departures whose destination contains this text, e.g. Genève.",
+          "walk_time": "Hides departures you can no longer reach."
+        }
+      },
+      "reauth_confirm": {
+        "title": "API key refused",
+        "description": "opentransportdata.swiss refused the API key. Enter a new one, or leave empty to use the free source without key.",
+        "data": {
+          "api_key": "opentransportdata.swiss API key"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "The transport data service could not be reached.",
+      "invalid_api_key": "opentransportdata.swiss refused this API key.",
+      "no_stop": "No stop found with this name."
+    },
+    "abort": {
+      "reauth_successful": "The API key was updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Departure board options",
+        "data": {
+          "api_key": "opentransportdata.swiss API key (optional)",
+          "limit": "Number of departures",
+          "modes": "Means of transport",
+          "lines": "Lines",
+          "destination": "Direction contains",
+          "walk_time": "Walking time to the stop",
+          "delay_threshold": "Delay counted as a disruption",
+          "scan_interval": "Update every"
+        },
+        "data_description": {
+          "lines": "Comma separated, e.g. 9, 21, S3. Empty for all lines.",
+          "destination": "Only departures whose destination contains this text, e.g. Genève.",
+          "walk_time": "Hides departures you can no longer reach."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "The transport data service could not be reached.",
+      "invalid_api_key": "opentransportdata.swiss refused this API key."
+    }
+  },
+  "selector": {
+    "mode": {
+      "options": {
+        "train": "Train",
+        "bus": "Bus",
+        "tram": "Tram",
+        "metro": "Metro",
+        "ship": "Boat",
+        "cableway": "Cable car / funicular",
+        "other": "Other"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "departure_1": { "name": "Next departure" },
+      "departure_2": { "name": "Second departure" },
+      "departure_3": { "name": "Third departure" },
+      "delay": { "name": "Delay" },
+      "departures": { "name": "Departure board" },
+      "alerts": { "name": "Alerts" }
+    },
+    "binary_sensor": {
+      "disruption": { "name": "Disruption" }
+    }
+  }
+}

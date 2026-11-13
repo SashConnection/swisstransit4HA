@@ -1,0 +1,105 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Choisir un arrêt ou une gare",
+        "description": "Tape le nom d'un arrêt de bus ou de tram, d'une gare, d'un débarcadère ou d'une station de téléphérique, partout en Suisse.\n\nOptionnel : une clé gratuite d'opentransportdata.swiss (API « OJP 2.0 ») ajoute le temps réel des bus et trams, les suppressions et les messages de perturbation. Sans clé, l'horaire vient de transport.opendata.ch, avec les retards en temps réel surtout pour les trains.",
+        "data": {
+          "query": "Arrêt ou gare",
+          "api_key": "Clé API opentransportdata.swiss (optionnelle)"
+        }
+      },
+      "stop": {
+        "title": "Lequel ?",
+        "data": {
+          "stop_id": "Arrêt"
+        }
+      },
+      "filters": {
+        "title": "Départs de {stop}",
+        "description": "Tout est optionnel. Laisse vide pour voir tous les départs.",
+        "data": {
+          "limit": "Nombre de départs",
+          "modes": "Moyens de transport",
+          "lines": "Lignes",
+          "destination": "Direction contient",
+          "walk_time": "Temps de marche jusqu'à l'arrêt",
+          "delay_threshold": "Retard considéré comme perturbation",
+          "scan_interval": "Mise à jour toutes les"
+        },
+        "data_description": {
+          "lines": "Séparées par des virgules, p. ex. 9, 21, S3. Vide pour toutes les lignes.",
+          "destination": "Seulement les départs dont la destination contient ce texte, p. ex. Genève.",
+          "walk_time": "Cache les départs que tu ne peux plus attraper."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Clé API refusée",
+        "description": "opentransportdata.swiss a refusé la clé API. Entre une nouvelle clé, ou laisse vide pour utiliser la source gratuite sans clé.",
+        "data": {
+          "api_key": "Clé API opentransportdata.swiss"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Le service de données de transport est injoignable.",
+      "invalid_api_key": "opentransportdata.swiss a refusé cette clé API.",
+      "no_stop": "Aucun arrêt trouvé avec ce nom."
+    },
+    "abort": {
+      "reauth_successful": "La clé API a été mise à jour."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options du tableau des départs",
+        "data": {
+          "api_key": "Clé API opentransportdata.swiss (optionnelle)",
+          "limit": "Nombre de départs",
+          "modes": "Moyens de transport",
+          "lines": "Lignes",
+          "destination": "Direction contient",
+          "walk_time": "Temps de marche jusqu'à l'arrêt",
+          "delay_threshold": "Retard considéré comme perturbation",
+          "scan_interval": "Mise à jour toutes les"
+        },
+        "data_description": {
+          "lines": "Séparées par des virgules, p. ex. 9, 21, S3. Vide pour toutes les lignes.",
+          "destination": "Seulement les départs dont la destination contient ce texte, p. ex. Genève.",
+          "walk_time": "Cache les départs que tu ne peux plus attraper."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Le service de données de transport est injoignable.",
+      "invalid_api_key": "opentransportdata.swiss a refusé cette clé API."
+    }
+  },
+  "selector": {
+    "mode": {
+      "options": {
+        "train": "Train",
+        "bus": "Bus",
+        "tram": "Tram",
+        "metro": "Métro",
+        "ship": "Bateau",
+        "cableway": "Téléphérique / funiculaire",
+        "other": "Autre"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "departure_1": { "name": "Prochain départ" },
+      "departure_2": { "name": "Deuxième départ" },
+      "departure_3": { "name": "Troisième départ" },
+      "delay": { "name": "Retard" },
+      "departures": { "name": "Tableau des départs" },
+      "alerts": { "name": "Alertes" }
+    },
+    "binary_sensor": {
+      "disruption": { "name": "Perturbation" }
+    }
+  }
+}

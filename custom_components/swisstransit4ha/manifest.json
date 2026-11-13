@@ -1,0 +1,18 @@
+{
+  "domain": "swisstransit4ha",
+  "name": "Swiss Transit For HA",
+  "codeowners": [
+    "@SashConnection"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "frontend",
+    "http"
+  ],
+  "documentation": "https://github.com/SashConnection/swisstransit4HA",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/SashConnection/swisstransit4HA/issues",
+  "requirements": [],
+  "version": "2026.11.0"
+}

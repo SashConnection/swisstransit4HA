@@ -1,0 +1,6 @@
+{
+  "name": "Swiss Transit For HA",
+  "homeassistant": "2025.8.0",
+  "render_readme": true,
+  "country": "CH"
+}
