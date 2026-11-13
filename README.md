@@ -18,12 +18,21 @@ Every bus, tram, train, metro, boat and cable car in Switzerland, with real-time
 ## Never run for the bus again
 
 - 🚏 **Any stop in Switzerland**: type *Lausanne, Flon*, *Bern* or *Zürich, Paradeplatz* and you're done
+- 🧭 **Or just your trip**: from home to work, with changes, arrival time and travel time
 - ⏱️ **Real time**: expected time, delay in minutes, cancelled departures, platform changes
 - 🚶 **Leave on time**: give your walking time, departures you can't catch disappear and the card tells you *leave in 3 min*
 - ⚠️ **Disruptions**: official messages for your lines, right on the card
 - 🔔 **Automations**: a *Disruption* sensor to get a notification on your phone before you leave home
 - 🎯 **Only what matters**: filter by line (`9, 21, S3`), direction (`Genève`) or means of transport
 - 🎨 **Five card styles**, ready to use, in French, German, Italian and English
+
+## Just your trip, from A to B
+
+Only one journey matters to you? Choose **A trip from A to B** when you add the integration: you get the next connections that actually take you there, even when your stop is not the terminus or you have to change.
+
+![Trip from Lausanne, Flon to Fribourg](https://raw.githubusercontent.com/SashConnection/swisstransit4HA/main/docs/images/trip.png)
+
+Departure and arrival time with real-time delays, travel time, changes and the vehicles to take (here metro m2, a short walk, then the IC1). Works with all five card styles.
 
 ## Five styles, one click
 
@@ -42,7 +51,7 @@ Pick your favourite in the card editor.
 ## Installation in 3 steps
 
 1. **Install**: click the *Open in HACS* button above, or in HACS → ⋮ → *Custom repositories* add `https://github.com/SashConnection/swisstransit4HA` (category *Integration*). Install *Swiss Transit For HA* and restart Home Assistant.
-2. **Add your stop**: *Settings → Devices & services → Add integration → Swiss Transit For HA*, type the name of your stop, choose it in the list. Optional filters: lines, direction, walking time.
+2. **Add your stop or your trip**: *Settings → Devices & services → Add integration → Swiss Transit For HA*, then choose *Departures from a stop* or *A trip from A to B* and type the names. Optional filters: lines, direction, walking time.
 3. **Add the card**: on a dashboard, *Add card → Swiss Transit departures*, pick a style.
 
 Add the integration once per stop or direction, e.g. *Lausanne → Genève* and *Lausanne → Bern*.
@@ -105,7 +114,7 @@ actions:
 
 | Entity | State | Attributes |
 |---|---|---|
-| `sensor.<stop>_next_departure` | departure time (real time when known) | line, destination, platform, delay, cancelled |
+| `sensor.<stop>_next_departure` | departure time (real time when known) | line, destination, platform, delay, cancelled; for a trip also arrival, duration, transfers, route |
 | `sensor.<stop>_second_departure`, `_third_departure` | same | same |
 | `sensor.<stop>_delay` | delay of the next departure, in minutes | |
 | `sensor.<stop>_departure_board` | number of departures | `departures` and `alerts` lists, for the card and templates |
@@ -135,6 +144,7 @@ title: To work       # optional
 Tous les bus, trams, trains, métros, bateaux et remontées mécaniques de Suisse, avec les retards en temps réel, les suppressions, les changements de voie et les messages de perturbation. Tu choisis ton arrêt, il n'y a rien à programmer.
 
 - 🚏 **N'importe quel arrêt en Suisse** : tape *Lausanne, Flon*, *Bern* ou *Zürich, Paradeplatz*, c'est tout
+- 🧭 **Ou juste ton trajet** : de la maison au travail, avec les changements, l'heure d'arrivée et la durée. Même si ton arrêt n'est pas le terminus ou s'il faut changer, seules les correspondances qui t'y emmènent sont affichées
 - ⏱️ **Temps réel** : heure prévue, retard en minutes, départs supprimés, changements de voie
 - 🚶 **Pars à l'heure** : indique ton temps de marche, les départs que tu ne peux plus attraper disparaissent et la carte te dit *pars dans 3 min*
 - ⚠️ **Perturbations** : les messages officiels de tes lignes, directement sur la carte
@@ -144,7 +154,7 @@ Tous les bus, trams, trains, métros, bateaux et remontées mécaniques de Suiss
 **Installation en 3 étapes :**
 
 1. Clique sur le bouton *Open in HACS* en haut, ou dans HACS → ⋮ → *Dépôts personnalisés* ajoute `https://github.com/SashConnection/swisstransit4HA` (catégorie *Intégration*). Installe *Swiss Transit For HA* et redémarre Home Assistant.
-2. *Paramètres → Appareils et services → Ajouter une intégration → Swiss Transit For HA*, tape le nom de ton arrêt et choisis-le dans la liste. Filtres optionnels : lignes, direction, temps de marche.
+2. *Paramètres → Appareils et services → Ajouter une intégration → Swiss Transit For HA*, choisis *Les départs d'un arrêt* ou *Un trajet de A à B*, puis tape les noms. Filtres optionnels : lignes, direction, temps de marche.
 3. Sur un tableau de bord : *Ajouter une carte → Swiss Transit departures*, puis choisis un style.
 
 **Gratuit, avec une clé optionnelle pour aller plus loin :** sans clé, ça marche tout de suite avec transport.opendata.ch, avec le temps réel surtout pour les trains. Une clé gratuite [opentransportdata.swiss](https://api-manager.opentransportdata.swiss) abonnée à **OJP 2.0** ajoute le temps réel des bus et trams, les suppressions et les messages de perturbation. Elle se colle dans les options de l'intégration. Chaque utilisateur crée la sienne, c'est gratuit et personnel.

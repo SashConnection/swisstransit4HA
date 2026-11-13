@@ -6,12 +6,17 @@ from datetime import timedelta
 from typing import Final
 
 DOMAIN: Final = "swisstransit4ha"
-VERSION: Final = "2026.11.2"
+VERSION: Final = "2026.11.3"
 MANUFACTURER: Final = "Swiss public transport"
 ATTRIBUTION: Final = "Data: opentransportdata.swiss / transport.opendata.ch"
 
 CONF_STOP_ID: Final = "stop_id"
 CONF_STOP_NAME: Final = "stop_name"
+# Trip mode: departures from CONF_STOP_ID that reach CONF_TO_ID.
+CONF_KIND: Final = "kind"
+KIND_TRIP: Final = "trip"
+CONF_TO_ID: Final = "to_id"
+CONF_TO_NAME: Final = "to_name"
 CONF_API_KEY: Final = "api_key"
 CONF_LIMIT: Final = "limit"
 CONF_MODES: Final = "modes"

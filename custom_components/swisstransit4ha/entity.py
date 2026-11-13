@@ -23,7 +23,9 @@ class TransitEntity(CoordinatorEntity[TransitCoordinator]):
             identifiers={(DOMAIN, entry.entry_id)},
             name=entry.title,
             manufacturer=MANUFACTURER,
-            model=f"Stop {coordinator.stop_id}",
+            model=f"Trip {coordinator.stop_id} → {coordinator.to_id}"
+            if coordinator.trip
+            else f"Stop {coordinator.stop_id}",
             entry_type=DeviceEntryType.SERVICE,
             configuration_url="https://opentransportdata.swiss/",
         )

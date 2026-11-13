@@ -76,6 +76,35 @@ class Situation:
 
 
 @dataclass(slots=True)
+class Leg:
+    """One vehicle of a trip."""
+
+    line: str
+    mode: str
+    destination: str
+    board: str
+    alight: str
+    departure: datetime | None = None
+    arrival: datetime | None = None
+    platform: str | None = None
+    cancelled: bool = False
+
+    def as_dict(self) -> dict[str, Any]:
+        """Return a JSON friendly copy."""
+        return {
+            "line": self.line,
+            "mode": self.mode,
+            "destination": self.destination,
+            "from": self.board,
+            "to": self.alight,
+            "departure": self.departure.isoformat() if self.departure else None,
+            "arrival": self.arrival.isoformat() if self.arrival else None,
+            "platform": self.platform,
+            "cancelled": self.cancelled,
+        }
+
+
+@dataclass(slots=True)
 class Departure:
     """One departure from the chosen stop."""
 
@@ -91,6 +120,11 @@ class Departure:
     cancelled: bool = False
     realtime: bool = False
     situations: list[str] = field(default_factory=list)
+    # Trip mode only: arrival at the destination stop and the vehicles taken.
+    arrival: datetime | None = None
+    arrival_expected: datetime | None = None
+    transfers: int | None = None
+    legs: list[Leg] = field(default_factory=list)
 
     @property
     def time(self) -> datetime:
@@ -111,9 +145,42 @@ class Departure:
             self.platform and self.planned_platform and self.platform != self.planned_platform
         )
 
+    @property
+    def arrival_time(self) -> datetime | None:
+        """Best known arrival time (trip mode)."""
+        return self.arrival_expected or self.arrival
+
+    @property
+    def arrival_delay(self) -> int | None:
+        """Arrival delay in whole minutes (trip mode)."""
+        if self.arrival is None or self.arrival_expected is None:
+            return None
+        return max(0, round((self.arrival_expected - self.arrival).total_seconds() / 60))
+
+    @property
+    def duration(self) -> int | None:
+        """Travel time in minutes (trip mode)."""
+        if self.arrival is None:
+            return None
+        if self.arrival_expected is not None:
+            return round((self.arrival_expected - self.time).total_seconds() / 60)
+        return round((self.arrival - self.planned).total_seconds() / 60)
+
     def as_dict(self) -> dict[str, Any]:
         """Return a JSON friendly copy, used by the card."""
-        return {
+        trip: dict[str, Any] = {}
+        if self.arrival is not None:
+            trip = {
+                "arrival": self.arrival.isoformat(),
+                "arrival_expected": self.arrival_expected.isoformat()
+                if self.arrival_expected
+                else None,
+                "arrival_delay": self.arrival_delay,
+                "duration": self.duration,
+                "transfers": self.transfers,
+                "legs": [leg.as_dict() for leg in self.legs],
+            }
+        return trip | {
             "line": self.line,
             "mode": self.mode,
             "category": self.category,
@@ -299,6 +366,112 @@ class OpenTransportClient:
         )
 
 
+    async def trip(self, from_id: str, to_id: str, limit: int, language: str = "en") -> Board:
+        """Next connections from one stop to another, transfers included."""
+        fields = [
+            "connections/from",
+            "connections/to/station/name",
+            "connections/to/arrival",
+            "connections/to/delay",
+            "connections/to/platform",
+            "connections/to/prognosis/arrival",
+            "connections/transfers",
+            "connections/sections/walk",
+            "connections/sections/journey/category",
+            "connections/sections/journey/number",
+            "connections/sections/journey/to",
+            "connections/sections/journey/operator",
+            "connections/sections/departure/station/name",
+            "connections/sections/departure/departure",
+            "connections/sections/departure/platform",
+            "connections/sections/departure/prognosis/departure",
+            "connections/sections/arrival/station/name",
+            "connections/sections/arrival/arrival",
+            "connections/sections/arrival/prognosis/arrival",
+        ]
+        params = [("from", from_id), ("to", to_id), ("limit", str(min(16, max(1, limit))))]
+        params += [("fields[]", f) for f in fields]
+        data = await self._get("connections", params)
+        departures: list[Departure] = []
+        from_name = to_name = None
+        for conn in data.get("connections") or []:
+            start = conn.get("from") or {}
+            end = conn.get("to") or {}
+            planned = _parse_time(start.get("departure"))
+            arrival = _parse_time(end.get("arrival"))
+            if planned is None or arrival is None:
+                continue
+            from_name = from_name or (start.get("station") or {}).get("name")
+            to_name = to_name or (end.get("station") or {}).get("name")
+            expected = _parse_time((start.get("prognosis") or {}).get("departure"))
+            if expected is None and isinstance(start.get("delay"), int):
+                expected = planned + timedelta(minutes=start["delay"])
+            arrival_expected = _parse_time((end.get("prognosis") or {}).get("arrival"))
+            if arrival_expected is None and isinstance(end.get("delay"), int):
+                arrival_expected = arrival + timedelta(minutes=end["delay"])
+
+            legs: list[Leg] = []
+            for section in conn.get("sections") or []:
+                journey = section.get("journey")
+                dep = section.get("departure") or {}
+                arr = section.get("arrival") or {}
+                if not journey:
+                    if section.get("walk") is not None:
+                        legs.append(
+                            Leg(
+                                line="",
+                                mode="walk",
+                                destination="",
+                                board=(dep.get("station") or {}).get("name") or "",
+                                alight=(arr.get("station") or {}).get("name") or "",
+                                departure=_parse_time(dep.get("departure")),
+                                arrival=_parse_time(arr.get("arrival")),
+                            )
+                        )
+                    continue
+                mode = open_mode(journey.get("category"))
+                legs.append(
+                    Leg(
+                        line=line_label(mode, journey.get("category"), journey.get("number")),
+                        mode=mode,
+                        destination=journey.get("to") or "",
+                        board=(dep.get("station") or {}).get("name") or "",
+                        alight=(arr.get("station") or {}).get("name") or "",
+                        departure=_parse_time((dep.get("prognosis") or {}).get("departure"))
+                        or _parse_time(dep.get("departure")),
+                        arrival=_parse_time((arr.get("prognosis") or {}).get("arrival"))
+                        or _parse_time(arr.get("arrival")),
+                        platform=dep.get("platform") or None,
+                    )
+                )
+            first = next((leg for leg in legs if leg.mode != "walk"), None)
+            prognosis_platform = (start.get("prognosis") or {}).get("platform")
+            planned_platform = start.get("platform") or None
+            departures.append(
+                Departure(
+                    line=first.line if first else "",
+                    mode=first.mode if first else "other",
+                    destination=first.destination if first else (to_name or ""),
+                    planned=planned,
+                    expected=expected,
+                    platform=prognosis_platform or planned_platform,
+                    planned_platform=planned_platform,
+                    realtime=expected is not None,
+                    arrival=arrival,
+                    arrival_expected=arrival_expected,
+                    transfers=conn.get("transfers"),
+                    legs=legs,
+                )
+            )
+        departures.sort(key=lambda d: d.time)
+        return Board(
+            stop_id=from_id,
+            stop_name=f"{from_name or from_id} → {to_name or to_id}",
+            source=self.source,
+            departures=departures,
+        )
+
+
 # --- opentransportdata.swiss OJP 2.0 --------------------------------------
 
 _OJP_MODES = {
@@ -346,6 +519,40 @@ _STOP_EVENT_REQUEST = """<?xml version="1.0" encoding="UTF-8"?>
           <UseRealtimeData>full</UseRealtimeData>
         </Params>
       </OJPStopEventRequest>
+    </siri:ServiceRequest>
+  </OJPRequest>
+</OJP>"""
+
+
+_TRIP_REQUEST = """<?xml version="1.0" encoding="UTF-8"?>
+<OJP xmlns="http://www.vdv.de/ojp" xmlns:siri="http://www.siri.org.uk/siri" version="2.0">
+  <OJPRequest>
+    <siri:ServiceRequest>
+      <siri:ServiceRequestContext>
+        <siri:Language>{lang}</siri:Language>
+      </siri:ServiceRequestContext>
+      <siri:RequestTimestamp>{now}</siri:RequestTimestamp>
+      <siri:RequestorRef>swisstransit4ha</siri:RequestorRef>
+      <OJPTripRequest>
+        <siri:RequestTimestamp>{now}</siri:RequestTimestamp>
+        <siri:MessageIdentifier>{msg}</siri:MessageIdentifier>
+        <Origin>
+          <PlaceRef>
+            <StopPlaceRef>{origin}</StopPlaceRef>
+          </PlaceRef>
+          <DepArrTime>{now}</DepArrTime>
+        </Origin>
+        <Destination>
+          <PlaceRef>
+            <StopPlaceRef>{destination}</StopPlaceRef>
+          </PlaceRef>
+        </Destination>
+        <Params>
+          <NumberOfResults>{limit}</NumberOfResults>
+          <IncludeIntermediateStops>false</IncludeIntermediateStops>
+          <UseRealtimeData>full</UseRealtimeData>
+        </Params>
+      </OJPTripRequest>
     </siri:ServiceRequest>
   </OJPRequest>
 </OJP>"""
@@ -447,11 +654,7 @@ def parse_stop_events(xml: bytes | str, stop_id: str, language: str = "en") -> B
             if ref and ref.endswith(stop_id):
                 break
 
-    situations: list[Situation] = []
-    for elem in _descendants(context, "PtSituation") if context is not None else []:
-        situation = _parse_situation(elem, language)
-        if situation and all(s.id != situation.id for s in situations):
-            situations.append(situation)
+    situations = _situations_in(context, language)
 
     departures: list[Departure] = []
     for result in _children(delivery, "StopEventResult"):
@@ -514,6 +717,158 @@ def parse_stop_events(xml: bytes | str, stop_id: str, language: str = "en") -> B
     return Board(stop_id, stop_name, OjpClient.source, departures, situations)
 
 
+def _service_info(service: ET.Element) -> tuple[str, str, str | None, str, bool]:
+    """Line, mode, category, destination and cancellation of an OJP Service."""
+    pt_mode = (_text(service, "Mode", "PtMode") or "").lower()
+    mode = _OJP_MODES.get(pt_mode, "other")
+    category = _text(service, "Mode", "ShortName", "Text")
+    line = _text(service, "PublishedServiceName", "Text") or category or ""
+    if mode == "train" and category and line and not line.upper().startswith(category.upper()):
+        line = f"{category}{line}"
+    cancelled = (_text(service, "Cancelled") or "").lower() == "true"
+    return (
+        line.replace(" ", ""),
+        mode,
+        category,
+        _text(service, "DestinationText", "Text") or "",
+        cancelled,
+    )
+
+
+def _situations_in(elem: ET.Element | None, language: str) -> list[Situation]:
+    situations: list[Situation] = []
+    for item in _descendants(elem, "PtSituation") if elem is not None else []:
+        situation = _parse_situation(item, language)
+        if situation and all(s.id != situation.id for s in situations):
+            situations.append(situation)
+    return situations
+
+
+def parse_trips(xml: bytes | str, from_id: str, to_id: str, language: str = "en") -> Board:
+    """Read an OJP 2.0 TripDelivery."""
+    try:
+        root = ET.fromstring(xml)
+    except ET.ParseError as err:
+        raise TransitError(f"OJP: unreadable answer ({err})") from err
+    delivery = next(iter(_descendants(root, "OJPTripDelivery")), None)
+    if delivery is None:
+        raise TransitError("OJP: no trip delivery in the answer")
+    error = _child(delivery, "ErrorCondition")
+    if error is not None:
+        message = " ".join(t.strip() for t in error.itertext() if t.strip())
+        if "NORESULTS" in message.upper().replace("_", ""):
+            return Board(from_id, f"{from_id} → {to_id}", OjpClient.source, [])
+        raise TransitError(f"OJP: {message}")
+
+    situations = _situations_in(_child(delivery, "TripResponseContext"), language)
+    departures: list[Departure] = []
+    from_name = to_name = None
+    for result in _children(delivery, "TripResult"):
+        trip = _child(result, "Trip")
+        if trip is None:
+            continue
+        legs: list[Leg] = []
+        first_board: ET.Element | None = None
+        last_alight: ET.Element | None = None
+        situation_ids: list[str] = []
+        for leg in _children(trip, "Leg"):
+            timed = _child(leg, "TimedLeg")
+            if timed is None:
+                walk = _child(leg, "TransferLeg")
+                if walk is None:
+                    walk = _child(leg, "ContinuousLeg")
+                if walk is not None and legs:
+                    # A walk between two vehicles; a walk before the first one
+                    # is left out, the trip starts at the chosen stop.
+                    legs.append(
+                        Leg(
+                            line="",
+                            mode="walk",
+                            destination="",
+                            board=_text(walk, "LegStart", "Name", "Text") or "",
+                            alight=_text(walk, "LegEnd", "Name", "Text") or "",
+                        )
+                    )
+                continue
+            board = _child(timed, "LegBoard")
+            alight = _child(timed, "LegAlight")
+            service = _child(timed, "Service")
+            if board is None or alight is None or service is None:
+                continue
+            line, mode, _category, destination, cancelled = _service_info(service)
+            cancelled = cancelled or (_text(timed, "Cancelled") or "").lower() == "true"
+            for ref in _descendants(timed, "SituationFullRef"):
+                sid = _text(ref, "SituationNumber")
+                if sid and sid not in situation_ids:
+                    situation_ids.append(sid)
+            dep = _child(board, "ServiceDeparture")
+            arr = _child(alight, "ServiceArrival")
+            legs.append(
+                Leg(
+                    line=line,
+                    mode=mode,
+                    destination=destination,
+                    board=_text(board, "StopPointName", "Text") or "",
+                    alight=_text(alight, "StopPointName", "Text") or "",
+                    departure=_parse_time(_text(dep, "EstimatedTime"))
+                    or _parse_time(_text(dep, "TimetabledTime")),
+                    arrival=_parse_time(_text(arr, "EstimatedTime"))
+                    or _parse_time(_text(arr, "TimetabledTime")),
+                    platform=_text(board, "EstimatedQuay", "Text")
+                    or _text(board, "PlannedQuay", "Text"),
+                    cancelled=cancelled,
+                )
+            )
+            if first_board is None:
+                first_board = board
+            last_alight = alight
+        if first_board is None or last_alight is None:
+            continue
+        dep = _child(first_board, "ServiceDeparture")
+        arr = _child(last_alight, "ServiceArrival")
+        planned = _parse_time(_text(dep, "TimetabledTime"))
+        arrival = _parse_time(_text(arr, "TimetabledTime"))
+        if planned is None or arrival is None:
+            continue
+        from_name = from_name or _text(first_board, "StopPointName", "Text")
+        to_name = to_name or _text(last_alight, "StopPointName", "Text")
+        expected = _parse_time(_text(dep, "EstimatedTime"))
+        planned_platform = _text(first_board, "PlannedQuay", "Text")
+        while legs and legs[-1].mode == "walk":
+            legs.pop()
+        first = legs[0]
+        transfers = _text(trip, "Transfers")
+        departures.append(
+            Departure(
+                line=first.line,
+                mode=first.mode,
+                destination=first.destination,
+                planned=planned,
+                expected=expected,
+                platform=_text(first_board, "EstimatedQuay", "Text") or planned_platform,
+                planned_platform=planned_platform,
+                cancelled=any(leg.cancelled for leg in legs)
+                or (_text(trip, "Cancelled") or "").lower() == "true",
+                realtime=expected is not None,
+                situations=situation_ids,
+                arrival=arrival,
+                arrival_expected=_parse_time(_text(arr, "EstimatedTime")),
+                transfers=int(transfers)
+                if transfers and transfers.isdigit()
+                else sum(leg.mode != "walk" for leg in legs) - 1,
+                legs=legs,
+            )
+        )
+    departures.sort(key=lambda d: d.time)
+    return Board(
+        from_id,
+        f"{from_name or from_id} → {to_name or to_id}",
+        OjpClient.source,
+        departures,
+        situations,
+    )
+
+
 class OjpClient:
     """opentransportdata.swiss OJP 2.0, needs a free API key."""
 
@@ -526,14 +881,28 @@ class OjpClient:
 
     async def board(self, stop_id: str, limit: int, language: str = "en") -> Board:
         """Next departures from a stop, with real-time data and disruptions."""
-        now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         body = _STOP_EVENT_REQUEST.format(
             lang=escape(language[:2] or "en"),
-            now=now,
+            now=datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
             msg=uuid.uuid4().hex[:16],
             stop=escape(stop_id),
             limit=int(limit),
         )
+        return parse_stop_events(await self._post(body), stop_id, language)
+
+    async def trip(self, from_id: str, to_id: str, limit: int, language: str = "en") -> Board:
+        """Next trips from one stop to another, with real-time data."""
+        body = _TRIP_REQUEST.format(
+            lang=escape(language[:2] or "en"),
+            now=datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            msg=uuid.uuid4().hex[:16],
+            origin=escape(from_id),
+            destination=escape(to_id),
+            limit=int(limit),
+        )
+        return parse_trips(await self._post(body), from_id, to_id, language)
+
+    async def _post(self, body: str) -> bytes:
         try:
             async with self._session.post(
                 OJP_URL,
@@ -550,7 +919,6 @@ class OjpClient:
                 if resp.status == 429:
                     raise TransitError("opentransportdata.swiss rate limit reached")
                 resp.raise_for_status()
-                xml = await resp.read()
+                return await resp.read()
         except (aiohttp.ClientError, TimeoutError) as err:
             raise TransitError(f"opentransportdata.swiss: {err}") from err
-        return parse_stop_events(xml, stop_id, language)

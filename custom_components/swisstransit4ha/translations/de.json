@@ -2,6 +2,14 @@
   "config": {
     "step": {
       "user": {
+        "title": "Was möchtest du verfolgen?",
+        "description": "Eine Abfahrtstafel zeigt alles, was an einer Haltestelle abfährt. Eine Verbindung zeigt nur die Abfahrten, die dich ans Ziel bringen, Umstiege inbegriffen.",
+        "menu_options": {
+          "departures": "Abfahrten einer Haltestelle",
+          "trip": "Eine Verbindung von A nach B"
+        }
+      },
+      "departures": {
         "title": "Haltestelle oder Bahnhof wählen",
         "description": "Gib den Namen einer Bus- oder Tramhaltestelle, eines Bahnhofs, einer Schiffstation oder Seilbahnstation in der Schweiz ein.\n\nOptional: Ein kostenloser Schlüssel von opentransportdata.swiss (API «OJP 2.0») ergänzt Echtzeitdaten für Bus und Tram, Ausfälle und Störungsmeldungen. Ohne Schlüssel kommt der Fahrplan von transport.opendata.ch, mit Echtzeit-Verspätungen vor allem für Züge.",
         "data": {
@@ -33,6 +41,35 @@
           "walk_time": "Blendet Abfahrten aus, die du nicht mehr erreichst."
         }
       },
+      "trip": {
+        "title": "Deine Verbindung",
+        "description": "Gib Start und Ziel ein. Die Integration findet die nächsten Verbindungen, mit Umstiegen und Ankunftszeit.\n\nOptional: Ein kostenloser Schlüssel von opentransportdata.swiss (API «OJP 2.0») ergänzt Echtzeitdaten für Bus und Tram, Ausfälle und Störungsmeldungen.",
+        "data": {
+          "from_query": "Von",
+          "to_query": "Nach",
+          "api_key": "API-Schlüssel opentransportdata.swiss (optional)"
+        }
+      },
+      "trip_stops": {
+        "title": "Welche Haltestellen?",
+        "data": {
+          "stop_id": "Von",
+          "to_id": "Nach"
+        }
+      },
+      "trip_filters": {
+        "title": "{from} → {to}",
+        "description": "Alles ist optional.",
+        "data": {
+          "limit": "Anzahl Verbindungen",
+          "walk_time": "Fussweg zur Haltestelle",
+          "delay_threshold": "Verspätung gilt als Störung ab",
+          "scan_interval": "Aktualisieren alle"
+        },
+        "data_description": {
+          "walk_time": "Blendet Abfahrten aus, die du nicht mehr erreichst."
+        }
+      },
       "reauth_confirm": {
         "title": "API-Schlüssel abgelehnt",
         "description": "opentransportdata.swiss hat den API-Schlüssel abgelehnt. Gib einen neuen ein oder lass das Feld leer, um die kostenlose Quelle ohne Schlüssel zu nutzen.",
@@ -44,7 +81,8 @@
     "error": {
       "cannot_connect": "Der Fahrplandienst ist nicht erreichbar.",
       "invalid_api_key": "opentransportdata.swiss hat diesen API-Schlüssel abgelehnt.",
-      "no_stop": "Keine Haltestelle mit diesem Namen gefunden."
+      "no_stop": "Keine Haltestelle mit diesem Namen gefunden.",
+      "same_stop": "Wähle zwei verschiedene Haltestellen."
     },
     "abort": {
       "reauth_successful": "Der API-Schlüssel wurde aktualisiert."
@@ -91,15 +129,29 @@
   },
   "entity": {
     "sensor": {
-      "departure_1": { "name": "Nächste Abfahrt" },
-      "departure_2": { "name": "Zweite Abfahrt" },
-      "departure_3": { "name": "Dritte Abfahrt" },
-      "delay": { "name": "Verspätung" },
-      "departures": { "name": "Abfahrtstafel" },
-      "alerts": { "name": "Meldungen" }
+      "departure_1": {
+        "name": "Nächste Abfahrt"
+      },
+      "departure_2": {
+        "name": "Zweite Abfahrt"
+      },
+      "departure_3": {
+        "name": "Dritte Abfahrt"
+      },
+      "delay": {
+        "name": "Verspätung"
+      },
+      "departures": {
+        "name": "Abfahrtstafel"
+      },
+      "alerts": {
+        "name": "Meldungen"
+      }
     },
     "binary_sensor": {
-      "disruption": { "name": "Störung" }
+      "disruption": {
+        "name": "Störung"
+      }
     }
   }
 }

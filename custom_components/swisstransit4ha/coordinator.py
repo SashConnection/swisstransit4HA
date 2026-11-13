@@ -26,12 +26,15 @@ from .const import (
     CONF_API_KEY,
     CONF_DELAY_THRESHOLD,
     CONF_DESTINATION,
+    CONF_KIND,
     CONF_LIMIT,
     CONF_LINES,
     CONF_MODES,
     CONF_SCAN_INTERVAL,
     CONF_STOP_ID,
     CONF_STOP_NAME,
+    CONF_TO_ID,
+    CONF_TO_NAME,
     CONF_WALK_TIME,
     DEFAULT_DELAY_THRESHOLD,
     DEFAULT_LIMIT,
@@ -40,6 +43,7 @@ from .const import (
     DEFAULT_WALK_TIME,
     DOMAIN,
     FETCH_MARGIN,
+    KIND_TRIP,
     MAX_FETCH,
     MODES,
 )
@@ -59,6 +63,12 @@ class TransitData:
     departures: list[Departure]
     situations: list[Situation]
     delay_threshold: int
+    to_name: str | None = None
+
+    @property
+    def trip(self) -> bool:
+        """Trips from one stop to another instead of a departure board."""
+        return self.to_name is not None
 
     @property
     def disrupted(self) -> bool:
@@ -127,15 +137,23 @@ class TransitCoordinator(DataUpdateCoordinator[TransitData]):
         )
         self.stop_id: str = entry.data[CONF_STOP_ID]
         self.stop_name: str = entry.data[CONF_STOP_NAME]
+        self.trip = entry.data.get(CONF_KIND) == KIND_TRIP
+        self.to_id: str | None = entry.data.get(CONF_TO_ID)
+        self.to_name: str | None = entry.data.get(CONF_TO_NAME)
         self._limit = int(options.get(CONF_LIMIT, DEFAULT_LIMIT))
-        self._modes: list[str] | None = options.get(CONF_MODES) or None
-        self._lines = split_lines(options.get(CONF_LINES))
-        self._destination: str | None = options.get(CONF_DESTINATION) or None
+        # Line, direction and vehicle filters only apply to a departure board.
+        self._modes: list[str] | None = None if self.trip else options.get(CONF_MODES) or None
+        self._lines = set() if self.trip else split_lines(options.get(CONF_LINES))
+        self._destination: str | None = (
+            None if self.trip else options.get(CONF_DESTINATION) or None
+        )
         self.walk_time = int(options.get(CONF_WALK_TIME, DEFAULT_WALK_TIME))
         self._delay_threshold = int(options.get(CONF_DELAY_THRESHOLD, DEFAULT_DELAY_THRESHOLD))
 
     @property
     def _fetch_count(self) -> int:
+        if self.trip:
+            return min(16, self._limit + 3)
         filtered = bool(self._lines or self._destination or self._modes)
         count = self._limit * (FETCH_MARGIN if filtered else 1) + 3
         return min(MAX_FETCH, count)
@@ -143,7 +161,12 @@ class TransitCoordinator(DataUpdateCoordinator[TransitData]):
     async def _async_update_data(self) -> TransitData:
         language = (self.hass.config.language or "en")[:2]
         try:
-            board: Board = await self.client.board(self.stop_id, self._fetch_count, language)
+            if self.trip and self.to_id:
+                board: Board = await self.client.trip(
+                    self.stop_id, self.to_id, self._fetch_count, language
+                )
+            else:
+                board = await self.client.board(self.stop_id, self._fetch_count, language)
         except TransitAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except TransitError as err:
@@ -169,11 +192,12 @@ class TransitCoordinator(DataUpdateCoordinator[TransitData]):
         ]
         return TransitData(
             stop_id=self.stop_id,
-            stop_name=self.stop_name,
+            stop_name=f"{self.stop_name} → {self.to_name}" if self.trip else self.stop_name,
             source=board.source,
             departures=departures,
             situations=situations,
             delay_threshold=self._delay_threshold,
+            to_name=self.to_name if self.trip else None,
         )
 
 

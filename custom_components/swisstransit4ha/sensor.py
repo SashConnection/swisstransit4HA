@@ -36,7 +36,16 @@ async def async_setup_entry(
 
 
 def _departure_attributes(dep: Departure) -> dict[str, Any]:
-    return {
+    trip: dict[str, Any] = {}
+    if dep.arrival is not None:
+        trip = {
+            "arrival": (dep.arrival_time or dep.arrival).isoformat(),
+            "arrival_delay": dep.arrival_delay,
+            "duration": dep.duration,
+            "transfers": dep.transfers,
+            "route": " → ".join(leg.line for leg in dep.legs if leg.mode != "walk"),
+        }
+    return trip | {
         "line": dep.line,
         "mode": dep.mode,
         "destination": dep.destination,
@@ -142,6 +151,8 @@ class BoardSensor(TransitEntity, SensorEntity):
             "stop_name": data.stop_name,
             "source": data.source,
             "walk_time": self.coordinator.walk_time,
+            "trip": data.trip,
+            "to_name": data.to_name,
             "departures": [d.as_dict() for d in data.departures],
             "alerts": [s.as_dict() for s in data.situations],
             "swisstransit_board": True,

@@ -2,6 +2,14 @@
   "config": {
     "step": {
       "user": {
+        "title": "Cosa vuoi seguire?",
+        "description": "Un tabellone mostra tutto ciò che parte da una fermata. Un viaggio mostra solo le partenze che ti portano a destinazione, cambi compresi.",
+        "menu_options": {
+          "departures": "Le partenze di una fermata",
+          "trip": "Un viaggio da A a B"
+        }
+      },
+      "departures": {
         "title": "Scegli una fermata o una stazione",
         "description": "Scrivi il nome di una fermata del bus o del tram, di una stazione, di un imbarcadero o di una funivia in Svizzera.\n\nFacoltativo: una chiave gratuita di opentransportdata.swiss (API «OJP 2.0») aggiunge i dati in tempo reale di bus e tram, le soppressioni e i messaggi di perturbazione. Senza chiave, l'orario viene da transport.opendata.ch, con i ritardi in tempo reale soprattutto per i treni.",
         "data": {
@@ -33,6 +41,35 @@
           "walk_time": "Nasconde le partenze che non puoi più raggiungere."
         }
       },
+      "trip": {
+        "title": "Il tuo viaggio",
+        "description": "Scrivi da dove parti e dove vai. L'integrazione trova le prossime coincidenze, con i cambi e l'orario di arrivo.\n\nFacoltativo: una chiave gratuita di opentransportdata.swiss (API «OJP 2.0») aggiunge i dati in tempo reale di bus e tram, le soppressioni e i messaggi di perturbazione.",
+        "data": {
+          "from_query": "Da",
+          "to_query": "A",
+          "api_key": "Chiave API opentransportdata.swiss (facoltativa)"
+        }
+      },
+      "trip_stops": {
+        "title": "Quali fermate?",
+        "data": {
+          "stop_id": "Da",
+          "to_id": "A"
+        }
+      },
+      "trip_filters": {
+        "title": "{from} → {to}",
+        "description": "Tutto è facoltativo.",
+        "data": {
+          "limit": "Numero di coincidenze",
+          "walk_time": "Tempo a piedi fino alla fermata",
+          "delay_threshold": "Ritardo considerato perturbazione",
+          "scan_interval": "Aggiorna ogni"
+        },
+        "data_description": {
+          "walk_time": "Nasconde le partenze che non puoi più raggiungere."
+        }
+      },
       "reauth_confirm": {
         "title": "Chiave API rifiutata",
         "description": "opentransportdata.swiss ha rifiutato la chiave API. Inseriscine una nuova, o lascia vuoto per usare la fonte gratuita senza chiave.",
@@ -44,7 +81,8 @@
     "error": {
       "cannot_connect": "Il servizio dei dati di trasporto non è raggiungibile.",
       "invalid_api_key": "opentransportdata.swiss ha rifiutato questa chiave API.",
-      "no_stop": "Nessuna fermata trovata con questo nome."
+      "no_stop": "Nessuna fermata trovata con questo nome.",
+      "same_stop": "Scegli due fermate diverse."
     },
     "abort": {
       "reauth_successful": "La chiave API è stata aggiornata."
@@ -91,15 +129,29 @@
   },
   "entity": {
     "sensor": {
-      "departure_1": { "name": "Prossima partenza" },
-      "departure_2": { "name": "Seconda partenza" },
-      "departure_3": { "name": "Terza partenza" },
-      "delay": { "name": "Ritardo" },
-      "departures": { "name": "Tabellone partenze" },
-      "alerts": { "name": "Avvisi" }
+      "departure_1": {
+        "name": "Prossima partenza"
+      },
+      "departure_2": {
+        "name": "Seconda partenza"
+      },
+      "departure_3": {
+        "name": "Terza partenza"
+      },
+      "delay": {
+        "name": "Ritardo"
+      },
+      "departures": {
+        "name": "Tabellone partenze"
+      },
+      "alerts": {
+        "name": "Avvisi"
+      }
     },
     "binary_sensor": {
-      "disruption": { "name": "Perturbazione" }
+      "disruption": {
+        "name": "Perturbazione"
+      }
     }
   }
 }

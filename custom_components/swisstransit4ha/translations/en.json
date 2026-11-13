@@ -2,6 +2,14 @@
   "config": {
     "step": {
       "user": {
+        "title": "What do you want to follow?",
+        "description": "A departure board shows everything leaving a stop. A trip shows only the departures that take you to your destination, changes included.",
+        "menu_options": {
+          "departures": "Departures from a stop",
+          "trip": "A trip from A to B"
+        }
+      },
+      "departures": {
         "title": "Choose a stop or station",
         "description": "Type the name of a bus stop, tram stop, station, pier or cable car station anywhere in Switzerland.\n\nOptional: a free key from opentransportdata.swiss (API \"OJP 2.0\") adds real-time data for buses and trams, cancellations and disruption messages. Without a key, the timetable comes from transport.opendata.ch with real-time delays mostly for trains.",
         "data": {
@@ -33,6 +41,35 @@
           "walk_time": "Hides departures you can no longer reach."
         }
       },
+      "trip": {
+        "title": "Your trip",
+        "description": "Type where you leave from and where you go. The integration finds the next connections, with changes and arrival time.\n\nOptional: a free key from opentransportdata.swiss (API \"OJP 2.0\") adds real-time data for buses and trams, cancellations and disruption messages.",
+        "data": {
+          "from_query": "From",
+          "to_query": "To",
+          "api_key": "opentransportdata.swiss API key (optional)"
+        }
+      },
+      "trip_stops": {
+        "title": "Which stops?",
+        "data": {
+          "stop_id": "From",
+          "to_id": "To"
+        }
+      },
+      "trip_filters": {
+        "title": "{from} → {to}",
+        "description": "Everything is optional.",
+        "data": {
+          "limit": "Number of connections",
+          "walk_time": "Walking time to the stop",
+          "delay_threshold": "Delay counted as a disruption",
+          "scan_interval": "Update every"
+        },
+        "data_description": {
+          "walk_time": "Hides departures you can no longer reach."
+        }
+      },
       "reauth_confirm": {
         "title": "API key refused",
         "description": "opentransportdata.swiss refused the API key. Enter a new one, or leave empty to use the free source without key.",
@@ -44,7 +81,8 @@
     "error": {
       "cannot_connect": "The transport data service could not be reached.",
       "invalid_api_key": "opentransportdata.swiss refused this API key.",
-      "no_stop": "No stop found with this name."
+      "no_stop": "No stop found with this name.",
+      "same_stop": "Choose two different stops."
     },
     "abort": {
       "reauth_successful": "The API key was updated."
@@ -91,15 +129,29 @@
   },
   "entity": {
     "sensor": {
-      "departure_1": { "name": "Next departure" },
-      "departure_2": { "name": "Second departure" },
-      "departure_3": { "name": "Third departure" },
-      "delay": { "name": "Delay" },
-      "departures": { "name": "Departure board" },
-      "alerts": { "name": "Alerts" }
+      "departure_1": {
+        "name": "Next departure"
+      },
+      "departure_2": {
+        "name": "Second departure"
+      },
+      "departure_3": {
+        "name": "Third departure"
+      },
+      "delay": {
+        "name": "Delay"
+      },
+      "departures": {
+        "name": "Departure board"
+      },
+      "alerts": {
+        "name": "Alerts"
+      }
     },
     "binary_sensor": {
-      "disruption": { "name": "Disruption" }
+      "disruption": {
+        "name": "Disruption"
+      }
     }
   }
 }

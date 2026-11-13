@@ -16,6 +16,7 @@ const TEXTS = {
   en: {
     now: "now", min: "min", cancelled: "Cancelled", cancelled_short: "CANC", platform: "Pl.", none: "No departures",
     unavailable: "Unavailable", time: "TIME", line: "LINE", destination: "DESTINATION", pl: "PL.", info: "INFO",
+    arr: "arr.", direct: "direct", change: "change", changes: "changes", arrival: "ARR.", heading_arr: "Arrival",
     departure: "Departure", approx: "approx.", then: "Then", leave_in: "Leave in", leave_now: "Leave now",
     style: "Style", styles: { list: "List", flap: "Split-flap board", platform: "Platform display", countdown: "Next departure, large", timeline: "Timeline" },
     entity: "Departure board sensor", title: "Title", max: "Maximum departures", show_platform: "Show platforms",
@@ -24,6 +25,7 @@ const TEXTS = {
   fr: {
     now: "maint.", min: "min", cancelled: "Supprimé", cancelled_short: "SUPPR", platform: "Voie", none: "Aucun départ",
     unavailable: "Indisponible", time: "HEURE", line: "LIGNE", destination: "DESTINATION", pl: "VOIE", info: "INFO",
+    arr: "arr.", direct: "direct", change: "changement", changes: "changements", arrival: "ARR.", heading_arr: "Arrivée",
     departure: "Départ", approx: "env.", then: "Puis", leave_in: "Pars dans", leave_now: "Pars maintenant",
     style: "Style", styles: { list: "Liste", flap: "Tableau à palettes", platform: "Affichage de quai", countdown: "Prochain départ en grand", timeline: "Frise" },
     entity: "Capteur tableau des départs", title: "Titre", max: "Nombre de départs max.", show_platform: "Afficher les voies",
@@ -32,6 +34,7 @@ const TEXTS = {
   de: {
     now: "jetzt", min: "Min.", cancelled: "Fällt aus", cancelled_short: "AUSF", platform: "Gl.", none: "Keine Abfahrten",
     unavailable: "Nicht verfügbar", time: "ZEIT", line: "LINIE", destination: "ZIEL", pl: "GL.", info: "INFO",
+    arr: "an", direct: "direkt", change: "Umstieg", changes: "Umstiege", arrival: "AN", heading_arr: "Ankunft",
     departure: "Abfahrt", approx: "ca.", then: "Dann", leave_in: "Los in", leave_now: "Jetzt los",
     style: "Stil", styles: { list: "Liste", flap: "Fallblattanzeiger", platform: "Perronanzeiger", countdown: "Nächste Abfahrt gross", timeline: "Zeitleiste" },
     entity: "Sensor Abfahrtstafel", title: "Titel", max: "Max. Abfahrten", show_platform: "Gleise anzeigen",
@@ -40,6 +43,7 @@ const TEXTS = {
   it: {
     now: "ora", min: "min", cancelled: "Soppresso", cancelled_short: "SOPPR", platform: "Bin.", none: "Nessuna partenza",
     unavailable: "Non disponibile", time: "ORA", line: "LINEA", destination: "DESTINAZIONE", pl: "BIN.", info: "INFO",
+    arr: "arr.", direct: "diretto", change: "cambio", changes: "cambi", arrival: "ARR.", heading_arr: "Arrivo",
     departure: "Partenza", approx: "ca.", then: "Poi", leave_in: "Parti tra", leave_now: "Parti ora",
     style: "Stile", styles: { list: "Elenco", flap: "Tabellone a palette", platform: "Display di binario", countdown: "Prossima partenza in grande", timeline: "Cronologia" },
     entity: "Sensore tabellone partenze", title: "Titolo", max: "Partenze max.", show_platform: "Mostra i binari",
@@ -47,7 +51,7 @@ const TEXTS = {
   },
 };
 
-const FLAP_CHARS = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:+'-.,/()";
+const FLAP_CHARS = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:+'-.,/()>";
 
 const esc = (value) =>
   String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -57,7 +61,8 @@ const flapText = (value) =>
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .toUpperCase()
-    .replace(/[^ A-Z0-9:+'\-.,/()]/g, " ");
+    .replace(/→/g, ">")
+    .replace(/[^ A-Z0-9:+'\-.,/()>]/g, " ");
 
 const pageLang = () => (document.documentElement.lang || navigator.language || "en").slice(0, 2);
 const textsFor = (lang) => TEXTS[lang] || TEXTS.en;
@@ -73,6 +78,12 @@ const BASE_CSS = `
   .line.mode-metro { background: #1d9e75; }
   .line.mode-tram { background: #7f77dd; }
   .line.mode-cableway { background: #ba7517; }
+  .route { display: inline-flex; align-items: center; gap: 3px; flex-wrap: nowrap; white-space: nowrap; }
+  .route .line { font-size: 0.78em; padding: 1px 5px; min-width: 1.8em; }
+  .route .sep { color: var(--secondary-text-color); font-size: 0.8em; }
+  .route ha-icon { --mdc-icon-size: 16px; color: var(--secondary-text-color); }
+  .tripinfo { font-size: 0.85em; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tripinfo .late { color: var(--error-color, #db4437); font-weight: 600; }
 `;
 
 const STYLE_CSS = {
@@ -140,6 +151,8 @@ const STYLE_CSS = {
     .short { display: none; }
     @container (max-width: 380px) { .long { display: none; } .short { display: inline; } .qgrid { column-gap: 6px; } }
     .qdest { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .qdest .late { color: #ff8a80; font-weight: 600; }
+    .quai .route .sep, .quai .route ha-icon { color: #9fb4d8; }
     .qline { display: inline-block; background: #fff; color: #0d2a5c; border-radius: 3px; padding: 1px 5px; font-weight: 600;
              font-size: 0.85em; min-width: 2em; text-align: center; box-sizing: border-box; }
     .qpl.changed { color: #ffd23f; font-weight: 600; }
@@ -160,6 +173,8 @@ const STYLE_CSS = {
     .cdline { display: flex; align-items: center; gap: 10px; margin-top: 6px; min-width: 0; }
     .cdline .line { font-size: 1.1em; padding: 3px 10px; }
     .cddest { font-size: 1.05em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cdline .route .line { font-size: 1em; padding: 3px 9px; }
+    .cdarr { margin-top: 6px; font-size: 0.95em; }
     .cdbig { text-align: right; flex: none; }
     .cdnum { font-size: 3.2em; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; }
     .cdnum.late { color: var(--error-color, #db4437); }
@@ -298,6 +313,36 @@ class SwissTransitCard extends HTMLElement {
     return this._config.title ?? this._state?.attributes?.stop_name ?? "";
   }
 
+  _isTrip() {
+    return Boolean(this._state?.attributes?.trip);
+  }
+
+  _changes(dep, compact = false) {
+    const t = this._t;
+    const n = dep.transfers ?? 0;
+    if (n === 0) return t.direct;
+    return compact ? `⇄ ${n}` : `${n} ${n === 1 ? t.change : t.changes}`;
+  }
+
+  _route(dep, cls = "line") {
+    const legs = dep.legs?.length ? dep.legs : [{ line: dep.line, mode: dep.mode }];
+    return `<span class="route">${legs
+      .map((leg) =>
+        leg.mode === "walk"
+          ? '<ha-icon icon="mdi:walk"></ha-icon>'
+          : `<span class="${cls} mode-${esc(leg.mode)}">${esc(leg.line)}</span>`,
+      )
+      .join('<span class="sep">›</span>')}</span>`;
+  }
+
+  _arrivalInfo(dep, compact = false) {
+    const t = this._t;
+    const arr = dep.arrival_expected || dep.arrival;
+    const late = dep.arrival_delay > 0 ? ` <span class="late">+${dep.arrival_delay}'</span>` : "";
+    const duration = dep.duration != null ? ` · ${dep.duration} ${t.min}` : "";
+    return `${t.arr} ${this._clock(arr)}${late}${duration} · ${this._changes(dep, compact)}`;
+  }
+
   _countdown(dep) {
     if (dep.cancelled) return `<span class="cancelled-label">${this._t.cancelled}</span>`;
     const m = this._minutes(dep);
@@ -353,6 +398,17 @@ class SwissTransitCard extends HTMLElement {
       this._config.show_platform && dep.platform
         ? `<span class="platform ${dep.platform_changed ? "changed" : ""}">${this._t.platform} ${esc(dep.platform)}</span>`
         : '<span class="platform"></span>';
+    if (dep.arrival) {
+      return `
+      <div class="row ${dep.cancelled ? "is-cancelled" : ""}">
+        <ha-icon class="mode" icon="${MODE_ICONS[dep.mode] || MODE_ICONS.other}"></ha-icon>
+        ${this._route(dep)}
+        <span class="dest tripinfo">${this._arrivalInfo(dep, true)}${dep.situations?.length ? ' <ha-icon class="warn" icon="mdi:alert"></ha-icon>' : ""}</span>
+        ${platform}
+        <span class="time"><span class="${late ? "planned" : ""}">${this._clock(dep.planned)}</span>${late ? `<span class="delay">+${dep.delay}'</span>` : ""}</span>
+        <span class="countdown">${this._countdown(dep)}</span>
+      </div>`;
+    }
     return `
       <div class="row ${dep.cancelled ? "is-cancelled" : ""}">
         <ha-icon class="mode" icon="${MODE_ICONS[dep.mode] || MODE_ICONS.other}"></ha-icon>
@@ -370,10 +426,12 @@ class SwissTransitCard extends HTMLElement {
     const t = this._t;
     const rows = Math.min(this._config.max || 6, 12);
     const showPl = this._config.show_platform;
+    const trip = this._isTrip();
     const fields = [
       { key: "time", w: 5, head: t.time },
       { key: "line", w: 4, head: t.line },
       { key: "dest", w: this._flapDest || 16, head: t.destination },
+      ...(trip ? [{ key: "arr", w: 5, head: t.arrival }] : []),
       ...(showPl ? [{ key: "pl", w: 3, head: t.pl }] : []),
       { key: "info", w: 5, head: t.info },
     ];
@@ -387,7 +445,12 @@ class SwissTransitCard extends HTMLElement {
         ? {
             time: this._clock(d.planned),
             line: d.line,
-            dest: d.destination,
+            // A trip with changes shows its route, e.g. M2>IC1.
+            dest:
+              d.arrival && d.transfers
+                ? (d.legs || []).filter((l) => l.mode !== "walk").map((l) => l.line).join(">")
+                : d.destination,
+            arr: d.arrival ? this._clock(d.arrival_expected || d.arrival) : "",
             pl: d.platform || "",
             info: d.cancelled ? t.cancelled_short : d.delay > 0 ? `+${d.delay}'` : "",
           }
@@ -483,8 +546,10 @@ class SwissTransitCard extends HTMLElement {
             ? `<span class="qinfo blink"><span class="long">${t.approx} +${d.delay} ${t.min}</span><span class="short">+${d.delay}'</span></span>`
             : "";
         const pl = showPl ? `<span class="qpl ${d.platform_changed ? "changed" : ""}">${esc(d.platform || "")}</span>` : "";
+        const lineCell = d.arrival ? this._route(d, "qline") : `<span class="qline">${esc(d.line)}</span>`;
+        const destCell = d.arrival ? this._arrivalInfo(d, true) : esc(d.destination);
         return `<div class="${cls} ${d.cancelled ? "qcancel" : ""}"><span>${this._clock(d.planned)}</span>
-          <span><span class="qline">${esc(d.line)}</span></span><span class="qdest">${esc(d.destination)}</span>${pl}<span>${info}</span></div>`;
+          <span>${lineCell}</span><span class="qdest">${destCell}</span>${pl}<span>${info}</span></div>`;
       })
       .join("");
     const alerts = this._alerts();
@@ -496,7 +561,7 @@ class SwissTransitCard extends HTMLElement {
       <div class="quai">
         <div class="qtop"><div><div class="qtitle">${t.departure}</div><div class="qstop">${esc(this._title())}</div></div><span class="clock"></span></div>
         <div class="qgrid${showPl ? "" : " no-pl"}">
-        <div class="${cls} h"><span>${t.heading_time}</span><span>${t.heading_line}</span><span>${t.heading_dest}</span>${
+        <div class="${cls} h"><span>${t.heading_time}</span><span>${t.heading_line}</span><span>${this._isTrip() ? t.heading_arr : t.heading_dest}</span>${
           showPl ? `<span>${t.heading_pl}</span>` : ""
         }<span>${t.heading_info}</span></div>
         ${rows}</div>
@@ -537,6 +602,8 @@ class SwissTransitCard extends HTMLElement {
         const m = Math.max(0, this._minutes(d));
         chips.push(
           `<span class="chip ${d.cancelled ? "bad" : ""}">${i === 0 ? `${t.then} ` : ""}${esc(d.line)} · ${this._clock(d.expected || d.planned)}${
+            d.arrival ? ` → ${this._clock(d.arrival_expected || d.arrival)}` : ""
+          }${
             d.cancelled ? ` · ${t.cancelled}` : ` · ${m} ${t.min}`
           }</span>`,
         );
@@ -557,7 +624,11 @@ class SwissTransitCard extends HTMLElement {
         <div class="cdtop">
           <div style="min-width:0">
             <div class="cdstop">${esc(this._title())}</div>
-            <div class="cdline"><span class="line mode-${esc(next.mode)}">${esc(next.line)}</span><span class="cddest">${esc(next.destination)}</span></div>
+            ${
+              next.arrival
+                ? `<div class="cdline">${this._route(next)}</div><div class="cdarr tripinfo">${this._arrivalInfo(next)}</div>`
+                : `<div class="cdline"><span class="line mode-${esc(next.mode)}">${esc(next.line)}</span><span class="cddest">${esc(next.destination)}</span></div>`
+            }
           </div>
           <div class="cdbig">
             <div class="cdnum ${late ? "late" : ""}">${minutes <= 0 ? t.now : minutes}</div>
@@ -579,31 +650,39 @@ class SwissTransitCard extends HTMLElement {
       return m > -1 && m <= span;
     });
     const lines = [];
+    // Trips are grouped by route (e.g. m2 › IC1), departures by line.
+    const keyOf = (d) =>
+      d.arrival ? (d.legs || []).filter((l) => l.mode !== "walk").map((l) => l.line).join(">") || d.line : d.line;
     deps.forEach((d) => {
-      let row = lines.find((l) => l.line === d.line);
-      if (!row) lines.push((row = { line: d.line, mode: d.mode, deps: [] }));
+      const key = keyOf(d);
+      let row = lines.find((l) => l.key === key);
+      if (!row) lines.push((row = { key, line: d.line, mode: d.mode, sample: d, deps: [] }));
       row.deps.push(d);
     });
+    const labelEm = Math.max(3.6, ...lines.map((l) => (l.sample.arrival ? l.key.length * 0.62 + 1.6 * (l.key.split(">").length) : 3.6)));
     const rows = lines
       .slice(0, 8)
       .map((row) => {
-        const trackPx = Math.max(120, (this.clientWidth || 400) - 90);
+        const trackPx = Math.max(120, (this.clientWidth || 400) - labelEm * 14 - 48);
         let prevRight = -Infinity;
         const dots = row.deps
           .map((d) => {
             const m = Math.max(0, this._minutes(d));
-            const label = this._clock(d.expected || d.planned).length + (d.delay > 0 ? 4 : 0);
+            const label =
+              this._clock(d.expected || d.planned).length + (d.delay > 0 ? 4 : 0) + (d.arrival ? 6 : 0);
             const half = ((label * 6.2 + 12) / 2 / trackPx) * 100;
             let left = Math.min(100 - half, Math.max(half, (m / span) * 100));
             left = Math.max(left, prevRight + half + 0.8);
             prevRight = left + half;
             const cls = d.cancelled ? "cancel" : d.delay > 0 ? "late" : "";
+            const arr = d.arrival ? `→${this._clock(d.arrival_expected || d.arrival)}` : "";
             return `<span class="dot ${cls}" style="left:${left.toFixed(1)}%" title="${esc(d.destination)}">${this._clock(
               d.expected || d.planned,
-            )}${d.delay > 0 ? ` +${d.delay}'` : ""}</span>`;
+            )}${d.delay > 0 ? ` +${d.delay}'` : ""}${arr}</span>`;
           })
           .join("");
-        return `<div class="tlrow"><span class="tllabel"><span class="line mode-${esc(row.mode)}">${esc(row.line)}</span></span><div class="track">${dots}</div></div>`;
+        const label = row.sample.arrival ? this._route(row.sample) : `<span class="line mode-${esc(row.mode)}">${esc(row.line)}</span>`;
+        return `<div class="tlrow" style="grid-template-columns:${labelEm}em minmax(0,1fr)"><span class="tllabel">${label}</span><div class="track">${dots}</div></div>`;
       })
       .join("");
     const ticks = [0, span / 3, (2 * span) / 3, span]
@@ -614,7 +693,7 @@ class SwissTransitCard extends HTMLElement {
       <div class="tl">
         <div class="tlhead"><span class="tltitle">${esc(this._title())}</span><span style="font-size:0.75em;color:var(--secondary-text-color)">${span} ${t.min}</span></div>
         ${rows || `<div class="empty">${t.none}</div>`}
-        <div class="axis"><span></span><div class="ticks">${ticks}</div></div>
+        <div class="axis" style="grid-template-columns:${labelEm}em minmax(0,1fr)"><span></span><div class="ticks">${ticks}</div></div>
         ${
           alerts.length
             ? `<div style="margin-top:8px;font-size:0.85em;color:var(--warning-color,#b06d00)">⚠ ${esc(alerts.map((a) => a.summary).join(" · "))}</div>`

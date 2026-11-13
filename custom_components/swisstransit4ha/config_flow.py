@@ -34,12 +34,15 @@ from .const import (
     CONF_API_KEY,
     CONF_DELAY_THRESHOLD,
     CONF_DESTINATION,
+    CONF_KIND,
     CONF_LIMIT,
     CONF_LINES,
     CONF_MODES,
     CONF_SCAN_INTERVAL,
     CONF_STOP_ID,
     CONF_STOP_NAME,
+    CONF_TO_ID,
+    CONF_TO_NAME,
     CONF_WALK_TIME,
     DEFAULT_DELAY_THRESHOLD,
     DEFAULT_LIMIT,
@@ -47,6 +50,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL_OPEN,
     DEFAULT_WALK_TIME,
     DOMAIN,
+    KIND_TRIP,
     MIN_SCAN_INTERVAL,
     MODES,
 )
@@ -54,6 +58,8 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 CONF_QUERY = "query"
+CONF_FROM_QUERY = "from_query"
+CONF_TO_QUERY = "to_query"
 
 _PASSWORD = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
 
@@ -72,60 +78,85 @@ async def _check_key(hass: HomeAssistant, api_key: str, stop_id: str) -> str | N
     return None
 
 
-def _filters_schema(values: Mapping[str, Any]) -> vol.Schema:
+def _stop_options(stops: dict[str, Stop]) -> list[SelectOptionDict]:
+    return [
+        SelectOptionDict(value=s.id, label=s.name if not s.mode else f"{s.name} ({s.mode})")
+        for s in stops.values()
+    ]
+
+
+async def _search(hass: HomeAssistant, query: str) -> dict[str, Stop]:
+    stops = await OpenTransportClient(async_get_clientsession(hass)).search(query.strip())
+    return {s.id: s for s in stops}
+
+
+def _filters_schema(values: Mapping[str, Any], trip: bool = False) -> vol.Schema:
     """Filters shared by the first setup and the options."""
     has_key = bool((values.get(CONF_API_KEY) or "").strip())
     default_interval = DEFAULT_SCAN_INTERVAL_OJP if has_key else DEFAULT_SCAN_INTERVAL_OPEN
-    return vol.Schema(
-        {
-            vol.Optional(
-                CONF_LIMIT, default=values.get(CONF_LIMIT, DEFAULT_LIMIT)
-            ): NumberSelector(
-                NumberSelectorConfig(min=1, max=30, step=1, mode=NumberSelectorMode.BOX)
-            ),
-            vol.Optional(CONF_MODES, default=values.get(CONF_MODES) or []): SelectSelector(
-                SelectSelectorConfig(
-                    options=MODES,
-                    multiple=True,
-                    mode=SelectSelectorMode.LIST,
-                    translation_key="mode",
-                )
-            ),
-            vol.Optional(
-                CONF_LINES, description={"suggested_value": values.get(CONF_LINES)}
-            ): TextSelector(),
-            vol.Optional(
-                CONF_DESTINATION, description={"suggested_value": values.get(CONF_DESTINATION)}
-            ): TextSelector(),
-            vol.Optional(
-                CONF_WALK_TIME, default=values.get(CONF_WALK_TIME, DEFAULT_WALK_TIME)
-            ): NumberSelector(
-                NumberSelectorConfig(
-                    min=0, max=60, step=1, unit_of_measurement="min", mode=NumberSelectorMode.BOX
-                )
-            ),
-            vol.Optional(
-                CONF_DELAY_THRESHOLD,
-                default=values.get(CONF_DELAY_THRESHOLD, DEFAULT_DELAY_THRESHOLD),
-            ): NumberSelector(
-                NumberSelectorConfig(
-                    min=1, max=60, step=1, unit_of_measurement="min", mode=NumberSelectorMode.BOX
-                )
-            ),
-            vol.Optional(
-                CONF_SCAN_INTERVAL,
-                default=values.get(CONF_SCAN_INTERVAL, default_interval),
-            ): NumberSelector(
-                NumberSelectorConfig(
-                    min=MIN_SCAN_INTERVAL,
-                    max=900,
-                    step=10,
-                    unit_of_measurement="s",
-                    mode=NumberSelectorMode.BOX,
-                )
-            ),
-        }
-    )
+    fields: dict[Any, Any] = {
+        vol.Optional(CONF_LIMIT, default=values.get(CONF_LIMIT, DEFAULT_LIMIT)): NumberSelector(
+            NumberSelectorConfig(
+                min=1, max=16 if trip else 30, step=1, mode=NumberSelectorMode.BOX
+            )
+        ),
+    }
+    if not trip:
+        fields.update(_departure_filters(values))
+    fields.update(_common_filters(values, default_interval))
+    return vol.Schema(fields)
+
+
+def _departure_filters(values: Mapping[str, Any]) -> dict[Any, Any]:
+    """Filters that only make sense for a departure board."""
+    return {
+        vol.Optional(CONF_MODES, default=values.get(CONF_MODES) or []): SelectSelector(
+            SelectSelectorConfig(
+                options=MODES,
+                multiple=True,
+                mode=SelectSelectorMode.LIST,
+                translation_key="mode",
+            )
+        ),
+        vol.Optional(
+            CONF_LINES, description={"suggested_value": values.get(CONF_LINES)}
+        ): TextSelector(),
+        vol.Optional(
+            CONF_DESTINATION, description={"suggested_value": values.get(CONF_DESTINATION)}
+        ): TextSelector(),
+    }
+
+
+def _common_filters(values: Mapping[str, Any], default_interval: int) -> dict[Any, Any]:
+    return {
+        vol.Optional(
+            CONF_WALK_TIME, default=values.get(CONF_WALK_TIME, DEFAULT_WALK_TIME)
+        ): NumberSelector(
+            NumberSelectorConfig(
+                min=0, max=60, step=1, unit_of_measurement="min", mode=NumberSelectorMode.BOX
+            )
+        ),
+        vol.Optional(
+            CONF_DELAY_THRESHOLD,
+            default=values.get(CONF_DELAY_THRESHOLD, DEFAULT_DELAY_THRESHOLD),
+        ): NumberSelector(
+            NumberSelectorConfig(
+                min=1, max=60, step=1, unit_of_measurement="min", mode=NumberSelectorMode.BOX
+            )
+        ),
+        vol.Optional(
+            CONF_SCAN_INTERVAL,
+            default=values.get(CONF_SCAN_INTERVAL, default_interval),
+        ): NumberSelector(
+            NumberSelectorConfig(
+                min=MIN_SCAN_INTERVAL,
+                max=900,
+                step=10,
+                unit_of_measurement="s",
+                mode=NumberSelectorMode.BOX,
+            )
+        ),
+    }
 
 
 def _clean(user_input: dict[str, Any]) -> dict[str, Any]:
@@ -150,7 +181,9 @@ class TransitConfigFlow(ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         """Initialize the flow."""
         self._stops: dict[str, Stop] = {}
+        self._to_stops: dict[str, Stop] = {}
         self._stop: Stop | None = None
+        self._to_stop: Stop | None = None
         self._api_key: str = ""
 
     @staticmethod
@@ -160,6 +193,12 @@ class TransitConfigFlow(ConfigFlow, domain=DOMAIN):
         return TransitOptionsFlow()
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Departure board of a stop, or trips from A to B."""
+        return self.async_show_menu(step_id="user", menu_options=["departures", "trip"])
+
+    async def async_step_departures(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         """Search a stop by name."""
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -178,7 +217,7 @@ class TransitConfigFlow(ConfigFlow, domain=DOMAIN):
                     return await self.async_step_stop()
 
         return self.async_show_form(
-            step_id="user",
+            step_id="departures",
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_QUERY): TextSelector(),
@@ -199,10 +238,7 @@ class TransitConfigFlow(ConfigFlow, domain=DOMAIN):
                 self._stop = stop
                 return await self.async_step_filters()
 
-        options = [
-            SelectOptionDict(value=s.id, label=s.name if not s.mode else f"{s.name} ({s.mode})")
-            for s in self._stops.values()
-        ]
+        options = _stop_options(self._stops)
         return self.async_show_form(
             step_id="stop",
             data_schema=vol.Schema(
@@ -236,6 +272,96 @@ class TransitConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="filters",
             data_schema=_filters_schema({CONF_API_KEY: self._api_key}),
             description_placeholders={"stop": self._stop.name},
+        )
+
+    async def async_step_trip(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Search the departure and arrival stops."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            self._api_key = (user_input.get(CONF_API_KEY) or "").strip()
+            try:
+                self._stops = await _search(self.hass, user_input[CONF_FROM_QUERY])
+                self._to_stops = await _search(self.hass, user_input[CONF_TO_QUERY])
+            except TransitError as err:
+                _LOGGER.warning("Stop search failed: %s", err)
+                errors["base"] = "cannot_connect"
+            else:
+                if not self._stops:
+                    errors[CONF_FROM_QUERY] = "no_stop"
+                if not self._to_stops:
+                    errors[CONF_TO_QUERY] = "no_stop"
+                if not errors:
+                    return await self.async_step_trip_stops()
+
+        return self.async_show_form(
+            step_id="trip",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_FROM_QUERY): TextSelector(),
+                    vol.Required(CONF_TO_QUERY): TextSelector(),
+                    vol.Optional(CONF_API_KEY): _PASSWORD,
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_trip_stops(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Pick the departure and arrival stops among those found."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            stop = self._stops[user_input[CONF_STOP_ID]]
+            to_stop = self._to_stops[user_input[CONF_TO_ID]]
+            if stop.id == to_stop.id:
+                errors["base"] = "same_stop"
+            elif error := await _check_key(self.hass, self._api_key, stop.id):
+                errors["base"] = error
+            else:
+                self._stop, self._to_stop = stop, to_stop
+                return await self.async_step_trip_filters()
+
+        from_options = _stop_options(self._stops)
+        to_options = _stop_options(self._to_stops)
+        return self.async_show_form(
+            step_id="trip_stops",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_STOP_ID, default=from_options[0]["value"]): SelectSelector(
+                        SelectSelectorConfig(options=from_options, mode=SelectSelectorMode.DROPDOWN)
+                    ),
+                    vol.Required(CONF_TO_ID, default=to_options[0]["value"]): SelectSelector(
+                        SelectSelectorConfig(options=to_options, mode=SelectSelectorMode.DROPDOWN)
+                    ),
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_trip_filters(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Number of trips, walking time."""
+        assert self._stop is not None and self._to_stop is not None
+        if user_input is not None:
+            options = _clean(user_input)
+            if self._api_key:
+                options[CONF_API_KEY] = self._api_key
+            return self.async_create_entry(
+                title=f"{self._stop.name} → {self._to_stop.name}",
+                data={
+                    CONF_KIND: KIND_TRIP,
+                    CONF_STOP_ID: self._stop.id,
+                    CONF_STOP_NAME: self._stop.name,
+                    CONF_TO_ID: self._to_stop.id,
+                    CONF_TO_NAME: self._to_stop.name,
+                },
+                options=options,
+            )
+        return self.async_show_form(
+            step_id="trip_filters",
+            data_schema=_filters_schema({CONF_API_KEY: self._api_key, CONF_LIMIT: 5}, trip=True),
+            description_placeholders={"from": self._stop.name, "to": self._to_stop.name},
         )
 
     async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> ConfigFlowResult:
@@ -290,5 +416,7 @@ class TransitOptionsFlow(OptionsFlow):
                     CONF_API_KEY, description={"suggested_value": current.get(CONF_API_KEY)}
                 ): _PASSWORD,
             }
-        ).extend(_filters_schema(current).schema)
+        ).extend(
+            _filters_schema(current, trip=self.config_entry.data.get(CONF_KIND) == KIND_TRIP).schema
+        )
         return self.async_show_form(step_id="init", data_schema=schema, errors=errors)
