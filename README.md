@@ -2,82 +2,71 @@
 
 <img src="https://raw.githubusercontent.com/SashConnection/swisstransit4HA/main/custom_components/swisstransit4ha/brand/icon.png" alt="Logo" width="96" align="right">
 
-**Next departures from your Swiss stop or station in Home Assistant**, with real-time delays, cancellations, platform changes and disruption messages.
-Buses, trams, trains, metro, boats and cable cars, anywhere in Switzerland. Available in **French, German, Italian and English**.
+**Your stop's departure board, live in Home Assistant.**
+Every bus, tram, train, metro, boat and cable car in Switzerland, with real-time delays, cancellations, platform changes and disruption messages. Pick your stop, nothing to program.
 
-🇫🇷 [En français plus bas](#en-français)
+[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=SashConnection&repository=swisstransit4HA&category=integration)
 
-## Features
+![HACS](https://img.shields.io/badge/HACS-custom-41BDF5) ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.8%2B-03a9f4) ![Languages](https://img.shields.io/badge/languages-FR%20%7C%20DE%20%7C%20IT%20%7C%20EN-success) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+
+🇫🇷 **[En français plus bas](#-en-français)**
+
+![Split-flap departure board](https://raw.githubusercontent.com/SashConnection/swisstransit4HA/main/docs/images/flap.gif)
+
+<sub>The split-flap style: letters spin like on a real station board when a departure leaves, a delay appears or a train is cancelled.</sub>
+
+## Never run for the bus again
+
+- 🚏 **Any stop in Switzerland**: type *Lausanne, Flon*, *Bern* or *Zürich, Paradeplatz* and you're done
+- ⏱️ **Real time**: expected time, delay in minutes, cancelled departures, platform changes
+- 🚶 **Leave on time**: give your walking time, departures you can't catch disappear and the card tells you *leave in 3 min*
+- ⚠️ **Disruptions**: official messages for your lines, right on the card
+- 🔔 **Automations**: a *Disruption* sensor to get a notification on your phone before you leave home
+- 🎯 **Only what matters**: filter by line (`9, 21, S3`), direction (`Genève`) or means of transport
+- 🎨 **Five card styles**, ready to use, in French, German, Italian and English
+
+## Five styles, one click
+
+Pick your favourite in the card editor.
+
+![Four card styles](https://raw.githubusercontent.com/SashConnection/swisstransit4HA/main/docs/images/hero.png)
 
 | | |
 |---|---|
-| 🚏 **Any stop** | Search by name, e.g. *Lausanne, Flon*, *Bern*, *Zürich, Paradeplatz* |
-| ⏱️ **Real time** | Expected time, delay in minutes, cancelled departures, platform changes |
-| ⚠️ **Disruptions** | Official messages (SIRI-SX) for the lines and stop you follow |
-| 🎯 **Filters** | Lines (`9, 21, S3`), direction (`Genève`), means of transport, walking time to the stop |
-| 🪧 **Card** | A ready-made departure board for your dashboard |
-| 🔔 **Automations** | A *Disruption* sensor turns on when a message is active, a departure is cancelled or late |
+| **Split-flap board** (`flap`)<br>The old station board, with spinning letters.<br><br><img src="https://raw.githubusercontent.com/SashConnection/swisstransit4HA/main/docs/images/flap.png" width="420"> | **Platform display** (`platform`)<br>Live clock, blinking delays, scrolling disruption banner.<br><br><img src="https://raw.githubusercontent.com/SashConnection/swisstransit4HA/main/docs/images/platform.png" width="420"> |
+| **Next departure, large** (`countdown`)<br>Readable from across the room. Perfect for a wall tablet by the door.<br><br><img src="https://raw.githubusercontent.com/SashConnection/swisstransit4HA/main/docs/images/countdown.png" width="420"> | **Timeline** (`timeline`)<br>The next 30 minutes, one row per line: bus or metro?<br><br><img src="https://raw.githubusercontent.com/SashConnection/swisstransit4HA/main/docs/images/timeline.png" width="420"> |
+| **List** (`list`)<br>Clean and compact, fits any dashboard.<br><br><img src="https://raw.githubusercontent.com/SashConnection/swisstransit4HA/main/docs/images/list.png" width="420"> | **On your phone**<br>Every style adapts to narrow screens.<br><br><img src="https://raw.githubusercontent.com/SashConnection/swisstransit4HA/main/docs/images/flap-phone.png" width="300"> |
 
-## Data sources
+<sub>Screenshots with example data.</sub>
+
+## Installation in 3 steps
+
+1. **Install**: click the *Open in HACS* button above, or in HACS → ⋮ → *Custom repositories* add `https://github.com/SashConnection/swisstransit4HA` (category *Integration*). Install *Swiss Transit For HA* and restart Home Assistant.
+2. **Add your stop**: *Settings → Devices & services → Add integration → Swiss Transit For HA*, type the name of your stop, choose it in the list. Optional filters: lines, direction, walking time.
+3. **Add the card**: on a dashboard, *Add card → Swiss Transit departures*, pick a style.
+
+Add the integration once per stop or direction, e.g. *Lausanne → Genève* and *Lausanne → Bern*.
+
+## Free, with an optional key for more
+
+It works right away, without account or key. A free key unlocks real time for buses and trams.
 
 | | Without key | With a free key |
 |---|---|---|
 | Source | [transport.opendata.ch](https://transport.opendata.ch) | [opentransportdata.swiss](https://opentransportdata.swiss) (OJP 2.0) |
-| Timetable | ✅ every stop | ✅ every stop |
+| Timetable of every stop | ✅ | ✅ |
 | Real-time delays | trains, some city networks | almost every operator, buses and trams included |
 | Cancellations | ❌ | ✅ |
 | Disruption messages | ❌ | ✅ |
 
-**Get a key (free, 2 minutes):** create an account on [api-manager.opentransportdata.swiss](https://api-manager.opentransportdata.swiss), create an application and subscribe it to **OJP 2.0**, then copy the key. You can add it later in the integration options.
+**Get a key in 2 minutes:** create an account on [api-manager.opentransportdata.swiss](https://api-manager.opentransportdata.swiss), create an application, subscribe it to **OJP 2.0** and copy the key into the integration options. Each user needs their own key: it's free and personal.
 
-## Installation
+## Automation ideas
 
-**HACS:** HACS → ⋮ → *Custom repositories* → `https://github.com/SashConnection/swisstransit4HA`, category *Integration* → install *Swiss Transit For HA* → restart Home Assistant.
-
-**Manual:** copy `custom_components/swisstransit4ha` into your `config/custom_components` folder and restart.
-
-Then: *Settings → Devices & services → Add integration → Swiss Transit For HA*. Add the integration once per stop or direction (e.g. *Lausanne → Genève* and *Lausanne → Bern*).
-
-## Entities (per stop)
-
-| Entity | State | Attributes |
-|---|---|---|
-| `sensor.<stop>_next_departure` | departure time (real time when known) | line, destination, platform, delay, cancelled |
-| `sensor.<stop>_second_departure`, `_third_departure` | same | same |
-| `sensor.<stop>_delay` | delay of the next departure, in minutes | |
-| `sensor.<stop>_departure_board` | number of departures | `departures` and `alerts` lists, for the card and templates |
-| `sensor.<stop>_alerts` | number of active messages | `alerts` |
-| `binary_sensor.<stop>_disruption` | on when something goes wrong | `alerts`, `cancelled`, `delayed` |
-
-## Card
-
-The card is loaded automatically. In a dashboard: *Add card → Swiss Transit departures*, then pick a style in the editor:
-
-| Style | Looks like |
-|---|---|
-| `list` | Clean list: line, destination, platform, time, delay, minutes left |
-| `flap` | Split-flap station board: the letters spin when a departure or a delay changes |
-| `platform` | Dark blue platform display with a live clock, blinking delays and a scrolling disruption banner |
-| `countdown` | One big countdown to the next departure, the following ones as chips, and *leave in X min* from your walking time. Made for wall tablets |
-| `timeline` | The next 30 minutes on a time axis, one row per line |
-
-In YAML:
+**Notify me when my train is late, on weekday mornings:**
 
 ```yaml
-type: custom:swisstransit-departures-card
-entity: sensor.lausanne_flon_departure_board
-style: flap          # list, flap, platform, countdown, timeline
-max: 8               # optional
-window: 30           # optional, timeline length in minutes
-show_platform: true  # optional
-show_alerts: true    # optional
-title: To work       # optional
-```
-
-## Automation example
-
-```yaml
-alias: Warn me when my train is late
+alias: Train late
 triggers:
   - trigger: state
     entity_id: binary_sensor.lausanne_disruption
@@ -97,19 +86,68 @@ actions:
             + state_attr('binary_sensor.lausanne_disruption', 'cancelled')) | join(', ') }}
 ```
 
+**Say it out loud when you open the front door:**
+
+```yaml
+actions:
+  - action: tts.speak
+    target:
+      entity_id: tts.home_assistant_cloud
+    data:
+      media_player_entity_id: media_player.hallway
+      message: >
+        Bus {{ state_attr('sensor.lausanne_flon_next_departure', 'line') }}
+        to {{ state_attr('sensor.lausanne_flon_next_departure', 'destination') }}
+        in {{ ((as_timestamp(states('sensor.lausanne_flon_next_departure')) - now().timestamp()) / 60) | round }} minutes.
+```
+
+## Entities (per stop)
+
+| Entity | State | Attributes |
+|---|---|---|
+| `sensor.<stop>_next_departure` | departure time (real time when known) | line, destination, platform, delay, cancelled |
+| `sensor.<stop>_second_departure`, `_third_departure` | same | same |
+| `sensor.<stop>_delay` | delay of the next departure, in minutes | |
+| `sensor.<stop>_departure_board` | number of departures | `departures` and `alerts` lists, for the card and templates |
+| `sensor.<stop>_alerts` | number of active messages | `alerts` |
+| `binary_sensor.<stop>_disruption` | on when a message is active, a departure is cancelled or late | `alerts`, `cancelled`, `delayed` |
+
+Entity names follow your Home Assistant language.
+
+## Card options (YAML)
+
+```yaml
+type: custom:swisstransit-departures-card
+entity: sensor.lausanne_flon_departure_board
+style: flap          # list, flap, platform, countdown, timeline
+max: 8               # optional, number of departures
+window: 30           # optional, timeline length in minutes
+show_platform: true  # optional
+show_alerts: true    # optional
+title: To work       # optional
+```
+
 ---
 
-## En français
+## 🇫🇷 En français
 
-**Les prochains départs de ton arrêt ou de ta gare dans Home Assistant**, avec les retards en temps réel, les suppressions, les changements de voie et les messages de perturbation. Bus, trams, trains, métro, bateaux et remontées mécaniques, partout en Suisse.
+**Le tableau des départs de ton arrêt, en direct dans Home Assistant.**
+Tous les bus, trams, trains, métros, bateaux et remontées mécaniques de Suisse, avec les retards en temps réel, les suppressions, les changements de voie et les messages de perturbation. Tu choisis ton arrêt, il n'y a rien à programmer.
 
-**Installation :** HACS → ⋮ → *Dépôts personnalisés* → `https://github.com/SashConnection/swisstransit4HA`, catégorie *Intégration* → installer → redémarrer Home Assistant. Ensuite *Paramètres → Appareils et services → Ajouter une intégration → Swiss Transit For HA*, et tape le nom de ton arrêt.
+- 🚏 **N'importe quel arrêt en Suisse** : tape *Lausanne, Flon*, *Bern* ou *Zürich, Paradeplatz*, c'est tout
+- ⏱️ **Temps réel** : heure prévue, retard en minutes, départs supprimés, changements de voie
+- 🚶 **Pars à l'heure** : indique ton temps de marche, les départs que tu ne peux plus attraper disparaissent et la carte te dit *pars dans 3 min*
+- ⚠️ **Perturbations** : les messages officiels de tes lignes, directement sur la carte
+- 🔔 **Automatisations** : un capteur *Perturbation* pour recevoir une notification avant de partir
+- 🎨 **Cinq styles de carte** : liste, tableau à palettes (les lettres tournent comme dans les gares), affichage de quai, prochain départ en grand (idéal pour une tablette murale) et frise des 30 prochaines minutes
 
-**Clé gratuite (recommandée) :** sans clé, les données viennent de transport.opendata.ch. Le temps réel couvre surtout les trains. Avec une clé [opentransportdata.swiss](https://api-manager.opentransportdata.swiss) abonnée à **OJP 2.0**, tu as aussi le temps réel des bus et trams, les suppressions et les messages de perturbation. La clé peut être ajoutée plus tard dans les options.
+**Installation en 3 étapes :**
 
-**Filtres :** lignes (`9, 21, S3`), direction (`Genève`), moyens de transport, temps de marche jusqu'à l'arrêt (cache les départs que tu ne peux plus attraper).
+1. Clique sur le bouton *Open in HACS* en haut, ou dans HACS → ⋮ → *Dépôts personnalisés* ajoute `https://github.com/SashConnection/swisstransit4HA` (catégorie *Intégration*). Installe *Swiss Transit For HA* et redémarre Home Assistant.
+2. *Paramètres → Appareils et services → Ajouter une intégration → Swiss Transit For HA*, tape le nom de ton arrêt et choisis-le dans la liste. Filtres optionnels : lignes, direction, temps de marche.
+3. Sur un tableau de bord : *Ajouter une carte → Swiss Transit departures*, puis choisis un style.
 
-**Carte :** *Ajouter une carte → Swiss Transit departures*, puis choisis un style dans l'éditeur : liste, tableau à palettes (les lettres tournent comme dans les gares), affichage de quai, prochain départ en grand (avec « pars dans X min ») ou frise des 30 prochaines minutes.
+**Gratuit, avec une clé optionnelle pour aller plus loin :** sans clé, ça marche tout de suite avec transport.opendata.ch, avec le temps réel surtout pour les trains. Une clé gratuite [opentransportdata.swiss](https://api-manager.opentransportdata.swiss) abonnée à **OJP 2.0** ajoute le temps réel des bus et trams, les suppressions et les messages de perturbation. Elle se colle dans les options de l'intégration. Chaque utilisateur crée la sienne, c'est gratuit et personnel.
 
 ---
 

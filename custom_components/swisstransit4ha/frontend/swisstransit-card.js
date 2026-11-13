@@ -87,7 +87,7 @@ const STYLE_CSS = {
     summary { cursor: pointer; display: flex; gap: 6px; align-items: center; }
     summary ha-icon { --mdc-icon-size: 18px; color: var(--warning-color, #ffa600); flex: none; }
     details p { margin: 6px 0 0; white-space: pre-line; color: var(--secondary-text-color); }
-    .row { display: grid; grid-template-columns: 24px auto minmax(0,1fr) auto auto 56px; gap: 8px; align-items: center;
+    .row { display: grid; grid-template-columns: 24px auto minmax(0,1fr) auto auto minmax(56px, auto); gap: 8px; align-items: center;
            padding: 6px 0; border-top: 1px solid var(--divider-color); }
     .row:first-child { border-top: none; }
     .mode { --mdc-icon-size: 20px; color: var(--secondary-text-color); }
@@ -118,7 +118,7 @@ const STYLE_CSS = {
     .c { flex: none; width: var(--cw, 16px); height: calc(var(--cw, 16px) * 1.55); background: #252525; color: #f2f2f2;
          font-size: calc(var(--cw, 16px) * 1.02); display: flex; align-items: center; justify-content: center; border-radius: 2px;
          position: relative; line-height: 1; }
-    .c::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: #0a0a0a; }
+    .c::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgba(0, 0, 0, 0.55); }
     .c.f-line { color: #ffd23f; }
     .c.f-info { color: #ff7a5c; }
     .c.flip { animation: flip 70ms ease-in; }
@@ -435,8 +435,10 @@ class SwissTransitCard extends HTMLElement {
       const width = this._board.clientWidth - 24;
       if (width <= 0) return;
       const gap = Math.max(4, Math.round(width / 90));
-      const cw = Math.max(9, Math.min(22, Math.floor(width / 30)));
-      const dest = Math.max(6, Math.min(28, Math.floor((width - gaps * gap + 2 * fields.length) / (cw + 2)) - others));
+      const cw = Math.max(9, Math.min(22, Math.floor(width / 36)));
+      // Cells and gap spans are all flex items 2px apart.
+      const cells = Math.floor((width - gaps * (gap + 2) + 2) / (cw + 2));
+      const dest = Math.max(6, Math.min(28, cells - others));
       this._board.style.setProperty("--cw", `${cw}px`);
       this._board.style.setProperty("--gap", `${gap}px`);
       if (dest !== (this._flapDest || 16)) {
